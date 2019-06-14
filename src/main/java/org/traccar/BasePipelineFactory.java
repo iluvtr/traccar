@@ -77,7 +77,11 @@ public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
     private final void addHandlers(ChannelPipeline pipeline, Class<? extends ChannelHandler>... handlerClasses) {
         for (Class<? extends ChannelHandler> handlerClass : handlerClasses) {
             if (handlerClass != null) {
-                pipeline.addLast(Main.getInjector().getInstance(handlerClass));
+                ChannelHandler instance = Main.getInjector()
+                        .getInstance(handlerClass);
+                pipeline.addLast(instance);
+                LOGGER.debug("Registered handlerClass = {}, handlerInstance={} ",
+                        handlerClass.getSimpleName(), instance);
             }
         }
     }
@@ -162,7 +166,10 @@ public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
         if (handlers != null) {
             for (String handler : handlers.split(",")) {
                 try {
-                    pipeline.addLast((ChannelHandler) Class.forName(handler).getDeclaredConstructor().newInstance());
+                    ChannelHandler instance = (ChannelHandler) Class.forName(handler)
+                            .getDeclaredConstructor().newInstance();
+                    pipeline.addLast(instance);
+                    LOGGER.info("Registered dynamic handler {}", instance.getClass().getName());
                 } catch (ReflectiveOperationException error) {
                     LOGGER.warn("Dynamic handler error", error);
                 }

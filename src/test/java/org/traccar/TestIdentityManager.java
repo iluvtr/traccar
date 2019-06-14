@@ -68,5 +68,10 @@ public final class TestIdentityManager implements IdentityManager {
             long deviceId, String attributeName, double defaultValue, boolean lookupConfig) {
         return defaultValue;
     }
+      
+    @Override
+    public boolean canCreateUnknownDevice(String uniqueId) {
+        return false;
+    }
 
 }

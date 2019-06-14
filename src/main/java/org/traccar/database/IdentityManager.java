@@ -40,4 +40,5 @@ public interface IdentityManager {
 
     double lookupAttributeDouble(long deviceId, String attributeName, double defaultValue, boolean lookupConfig);
 
+    boolean canCreateUnknownDevice(String uniqueId);
 }

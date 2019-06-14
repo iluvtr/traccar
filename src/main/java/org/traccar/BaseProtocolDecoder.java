@@ -119,7 +119,8 @@ public abstract class BaseProtocolDecoder extends ExtendedObjectDecoder {
             } catch (Exception e) {
                 LOGGER.warn("Find device error", e);
             }
-            if (deviceId == 0 && config.getBoolean("database.registerUnknown")) {
+            if (deviceId == 0 && (config.getBoolean("database.registerUnknown")
+                    || identityManager.canCreateUnknownDevice(uniqueIds[0]))) {
                 return identityManager.addUnknownDevice(uniqueIds[0]);
             }
             if (device != null && !device.getDisabled() || config.getBoolean("database.storeDisabled")) {

@@ -15,6 +15,10 @@
  */
 package org.traccar.database;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import static java.net.HttpURLConnection.HTTP_OK;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,11 +28,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
 import org.traccar.Context;
+import org.traccar.helper.HttpUtil;
 import org.traccar.model.Device;
 import org.traccar.model.DeviceState;
 import org.traccar.model.DeviceAccumulators;
@@ -414,6 +419,38 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
 
     public void setDeviceState(long deviceId, DeviceState deviceState) {
         deviceStates.put(deviceId, deviceState);
+    }
+
+    @Override
+    public boolean canCreateUnknownDevice(String uniqueId) {
+        String baseUrl = StringUtils.trimToEmpty(config.getString("nhl.baseUrl"));
+        String canCreateUrl = StringUtils.trimToEmpty(config.getString("nhl.canCreateUnknownDevice.url"));
+        LOGGER.info("url={},canCreateUrl={}", baseUrl, canCreateUrl);
+        if (canCreateUrl.isEmpty()) {
+            return false;
+        }
+        String url = baseUrl + canCreateUrl;
+        String header = config.getString("nhl.header");
+        url = url.replace("{uniqueId}", uniqueId);
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setReadTimeout(30 * 1000);
+            conn.setConnectTimeout(30 * 1000);
+            conn.setRequestMethod("GET");
+            HttpUtil.setHeaders(header, conn);
+            int respCode = conn.getResponseCode();
+            String respBody = HttpUtil.readResponse(respCode, conn);
+            if (respCode != HTTP_OK) {
+                LOGGER.error("Error executing url={},queryString={},responseCode={},responseBody={}",
+                        url, respCode, respBody);
+                return false;
+            } else {
+                return "true".equals(respBody);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Error sending data url={}", url, e);
+            return false;
+        }
     }
 
 }
